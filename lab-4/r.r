@@ -1,0 +1,38 @@
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Bước 1: Đọc dữ liệu
+data <- read.csv("Death_Probability.csv")
+
+# Kiểm tra dữ liệu
+head(data)
+
+# Bước 2: Xây dựng mô hình hồi quy logistic
+model <- glm(DEATH ~ PROCALCITONIN, data = data, family = binomial)
+
+# Bước 3: Hiển thị kết quả
+summary(model)
+
+# Bước 4: Trích xuất hệ số
+b0 <- coef(model)[1]
+b1 <- coef(model)[2]
+
+cat("\nPhương trình hồi quy logistic:\n")
+cat(sprintf("p = 1 / (1 + exp(-(%0.4f + %0.4f * PROCALCITONIN)))\n", b0, b1))
+
+# Tính odds cho PROCALCITONIN = 0 và 1
+odds_0 <- exp(b0 + b1 * 0)
+odds_1 <- exp(b0 + b1 * 1)
+
+# Tỷ lệ odds ratio
+odds_ratio <- odds_1 / odds_0
+
+cat("\nOdds khi PROCALCITONIN = 0:", odds_0)
+cat("\nOdds khi PROCALCITONIN = 1:", odds_1)
+cat("\nTỷ lệ Odds Ratio (e^b1):", odds_ratio, "\n")
+
+# Diễn giải
+if (odds_ratio > 1) {
+  cat(sprintf("→ Khi PROCALCITONIN tăng thêm 1 ng/ml, khả năng tử vong tăng %.2f lần.\n", odds_ratio))
+} else {
+  cat(sprintf("→ Khi PROCALCITONIN tăng thêm 1 ng/ml, khả năng tử vong giảm %.2f lần.\n", 1/odds_ratio))
+}
