@@ -1,7 +1,7 @@
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Cài thư viện cần thiết
 install.packages(c("ggplot2", "tseries", "forecast"))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(ggplot2)
 library(tseries)
 library(forecast)
@@ -37,7 +37,6 @@ ggplot(data[-1,], aes(x = date, y = diff_close)) +
 adf.test(na.omit(data$diff_close))
 
 # Cài và nạp gói forecast nếu chưa có
-install.packages("forecast")
 library(forecast)
 
 # Vẽ ACF và PACF cho chuỗi sai phân (đã có tính dừng)
@@ -94,3 +93,46 @@ cat("MSE  =", round(MSE, 4), "\n")
 cat("RMSE =", round(RMSE, 4), "\n")
 cat("MAPE =", round(MAPE, 2), "%\n")
 
+
+library(forecast)
+
+# --- 1️⃣ Tự động xác định mô hình tốt nhất ---
+auto_model <- auto.arima(train_ts, stepwise = FALSE, approximation = FALSE)
+summary(auto_model)
+
+# In ra các chỉ số AIC và BIC để so sánh
+cat("Comparison of AIC and BIC:\n")
+cat("Manual ARIMA(1,1,1):  AIC =", round(AIC(model), 2), " | BIC =", round(BIC(model), 2), "\n")
+cat("Auto ARIMA:", auto_model$arma[1], auto_model$arma[6], auto_model$arma[2],
+    " -> AIC =", round(AIC(auto_model), 2), " | BIC =", round(BIC(auto_model), 2), "\n\n")
+
+# --- 2️⃣ Dự báo bằng mô hình auto.arima ---
+forecast_auto <- forecast(auto_model, h = length(test_ts))
+
+# --- 3️⃣ So sánh trực quan ---
+autoplot(forecast_auto) +
+  autolayer(test_ts, series = "Actual", color = "red") +
+  labs(title = "Auto ARIMA Forecast vs Actual MSFT Prices",
+       x = "Time", y = "Closing Price (USD)") +
+  theme_minimal()
+
+# --- 4️⃣ Đánh giá sai số mô hình auto ---
+pred_auto <- as.numeric(forecast_auto$mean)
+actual <- as.numeric(test_ts)
+
+MAE_auto  <- mean(abs(pred_auto - actual))
+MSE_auto  <- mean((pred_auto - actual)^2)
+RMSE_auto <- sqrt(MSE_auto)
+MAPE_auto <- mean(abs((pred_auto - actual) / actual)) * 100
+
+cat("Auto ARIMA Model Evaluation:\n")
+cat("MAE  =", round(MAE_auto, 4), "\n")
+cat("MSE  =", round(MSE_auto, 4), "\n")
+cat("RMSE =", round(RMSE_auto, 4), "\n")
+cat("MAPE =", round(MAPE_auto, 2), "%\n\n")
+
+# --- 5️⃣ So sánh với mô hình thủ công ---
+cat("🔹 Comparison Summary:\n")
+cat("Manual ARIMA(1,1,1):  MAE =", round(MAE, 4), " | RMSE =", round(RMSE, 4), " | MAPE =", round(MAPE, 2), "%\n")
+cat("Auto ARIMA(", auto_model$arma[1], ",", auto_model$arma[6], ",", auto_model$arma[2], "): ",
+    "MAE =", round(MAE_auto, 4), " | RMSE =", round(RMSE_auto, 4), " | MAPE =", round(MAPE_auto, 2), "%\n")
