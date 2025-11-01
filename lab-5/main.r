@@ -48,25 +48,25 @@ par(mfrow = c(1, 1))   # reset lại layout
 library(forecast)
 library(ggplot2)
 
-# --- 1️⃣ Chia dữ liệu train / test ---
+# --- 1 Chia dữ liệu train / test ---
 n <- nrow(data)
 train_size <- round(n * 0.8)
 train <- data$close[1:train_size]
 test <- data$close[(train_size + 1):n]
 
-# --- 2️⃣ Chuyển sang dạng chuỗi thời gian ---
+# --- 2 Chuyển sang dạng chuỗi thời gian ---
 train_ts <- ts(train, frequency = 1)
 test_ts <- ts(test, frequency = 1, start = end(train_ts)[1] + 1)
 
-# --- 3️⃣ Huấn luyện mô hình ARIMA ---
+# --- 3 Huấn luyện mô hình ARIMA ---
 model <- Arima(train_ts, order = c(1,1,1))
 summary(model)
 
-# --- 4️⃣ Dự báo ---
+# --- 4 Dự báo ---
 forecast_horizon <- length(test_ts)
 forecast_result <- forecast(model, h = forecast_horizon)
 
-# --- 5️⃣ Plot kết quả ---
+# --- 5 Plot kết quả ---
 autoplot(forecast_result) +
   autolayer(test_ts, series = "Actual", color = "red") +  # đổi colour -> color
   labs(title = "ARIMA Forecast vs Actual MSFT Prices",
@@ -96,7 +96,7 @@ cat("MAPE =", round(MAPE, 2), "%\n")
 
 library(forecast)
 
-# --- 1️⃣ Tự động xác định mô hình tốt nhất ---
+# --- 1 Tự động xác định mô hình tốt nhất ---
 auto_model <- auto.arima(train_ts, stepwise = FALSE, approximation = FALSE)
 summary(auto_model)
 
@@ -106,17 +106,17 @@ cat("Manual ARIMA(1,1,1):  AIC =", round(AIC(model), 2), " | BIC =", round(BIC(m
 cat("Auto ARIMA:", auto_model$arma[1], auto_model$arma[6], auto_model$arma[2],
     " -> AIC =", round(AIC(auto_model), 2), " | BIC =", round(BIC(auto_model), 2), "\n\n")
 
-# --- 2️⃣ Dự báo bằng mô hình auto.arima ---
+# --- 2 Dự báo bằng mô hình auto.arima ---
 forecast_auto <- forecast(auto_model, h = length(test_ts))
 
-# --- 3️⃣ So sánh trực quan ---
+# --- 3 So sánh trực quan ---
 autoplot(forecast_auto) +
   autolayer(test_ts, series = "Actual", color = "red") +
   labs(title = "Auto ARIMA Forecast vs Actual MSFT Prices",
        x = "Time", y = "Closing Price (USD)") +
   theme_minimal()
 
-# --- 4️⃣ Đánh giá sai số mô hình auto ---
+# --- 4 Đánh giá sai số mô hình auto ---
 pred_auto <- as.numeric(forecast_auto$mean)
 actual <- as.numeric(test_ts)
 
